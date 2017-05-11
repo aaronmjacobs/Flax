@@ -1,5 +1,4 @@
 #include "Flax/WindowsFiberImpl.h"
-#include "Flax/Fiber.h"
 
 #include <cassert>
 
