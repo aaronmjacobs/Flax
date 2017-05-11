@@ -13,7 +13,7 @@ thread_local Fiber* Fiber::activeFiber = nullptr;
 thread_local std::vector<Fiber*> Fiber::fibers;
 
 // static
-thread_local Fiber::SchedulerContainer Fiber::scheduler = std::make_unique<RoundRobinScheduler>();
+thread_local Fiber::SchedulerContainer Fiber::scheduler(std::make_unique<RoundRobinScheduler>());
 
 // static
 Fiber& Fiber::getMainFiber() {
