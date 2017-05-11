@@ -15,9 +15,7 @@ public:
       return address != nullptr;
    }
 
-   void pause();
-
-   void resume();
+   void swapTo(WindowsFiberImpl& lastFiberImpl);
 
 private:
    void* address;

@@ -36,12 +36,8 @@ WindowsFiberImpl::~WindowsFiberImpl() {
    address = nullptr;
 }
 
-void WindowsFiberImpl::pause() {
-   assert(address && GetCurrentFiber() == address);
-}
-
-void WindowsFiberImpl::resume() {
-   assert(address && GetCurrentFiber() != address);
+void WindowsFiberImpl::swapTo(WindowsFiberImpl& lastFiberImpl) {
+   assert(address && GetCurrentFiber() != address && GetCurrentFiber() == lastFiberImpl.address);
    SwitchToFiber(address);
 }
 

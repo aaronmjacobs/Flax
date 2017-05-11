@@ -54,8 +54,6 @@ private:
    Fiber& operator=(const Fiber& other) = delete;
    Fiber& operator=(Fiber&& other) = delete;
 
-   void pause();
-   void resume();
    void finish();
 
    class SchedulerContainer {

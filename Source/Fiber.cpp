@@ -53,13 +53,15 @@ void Fiber::yield() {
 void Fiber::yieldTo(Fiber& fiber) {
    assert(fiber.isValid() && !fiber.isActive() && !fiber.isFinished());
    assert(activeFiber && activeFiber->isValid() && activeFiber->isActive());
+   assert(&fiber != activeFiber);
 
    if (scheduler) {
       scheduler->onFiberYieldedTo(&fiber);
    }
 
-   activeFiber->pause();
-   fiber.resume();
+   FiberImpl& lastFiberImpl = activeFiber->impl;
+   activeFiber = &fiber;
+   fiber.impl.swapTo(lastFiberImpl);
 }
 
 // static
@@ -107,20 +109,6 @@ Fiber::~Fiber() {
    if (isValid() && !isFinished()) {
       finish();
    }
-}
-
-void Fiber::pause() {
-   assert(isValid() && isActive());
-
-   activeFiber = nullptr;
-   impl.pause();
-}
-
-void Fiber::resume() {
-   assert(isValid() && !isActive() && !isFinished());
-
-   activeFiber = this;
-   impl.resume();
 }
 
 void Fiber::finish() {
