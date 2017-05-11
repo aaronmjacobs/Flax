@@ -3,25 +3,31 @@
 
 #include "Flax/Common.h"
 
+#define _XOPEN_SOURCE
+#include <ucontext.h>
+
+#include <cstdint>
+#include <memory>
+
 namespace flax {
 
 class PosixFiberImpl {
 public:
-   PosixFiberImpl(Fiber* fiber, FiberMainFunction mainFunction, bool isMainFiber) {
-   }
+   PosixFiberImpl(Fiber* fiber, FiberMainFunction mainFunction, bool isMainFiber);
 
-   ~PosixFiberImpl() {
-   }
+   ~PosixFiberImpl();
 
    bool isValid() const {
-      return false;
+      return valid;
    }
 
-   void pause() {
-   }
+   void swapTo(PosixFiberImpl& lastFiberImpl);
 
-   void resume() {
-   }
+private:
+   ucontext_t context;
+   std::unique_ptr<uint8_t[]> stack;
+   bool valid;
+   FiberAndMain fiberAndMain;
 };
 
 } // namespace flax
