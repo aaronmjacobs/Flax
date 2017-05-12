@@ -15,7 +15,7 @@ public:
       return address != nullptr;
    }
 
-   void swapTo(WindowsFiberImpl& lastFiberImpl);
+   static void swap(WindowsFiberImpl& from, WindowsFiberImpl& to);
 
 private:
    void* address;

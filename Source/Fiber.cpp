@@ -59,9 +59,10 @@ void Fiber::yieldTo(Fiber& fiber) {
       scheduler->onFiberYieldedTo(&fiber);
    }
 
-   FiberImpl& lastFiberImpl = activeFiber->impl;
+   FiberImpl& from = activeFiber->impl;
+   FiberImpl& to = fiber.impl;
    activeFiber = &fiber;
-   fiber.impl.swapTo(lastFiberImpl);
+   FiberImpl::swap(from, to);
 }
 
 // static

@@ -21,7 +21,7 @@ public:
       return valid;
    }
 
-   void swapTo(PosixFiberImpl& lastFiberImpl);
+   static void swap(PosixFiberImpl& from, PosixFiberImpl& to);
 
 private:
    ucontext_t context;

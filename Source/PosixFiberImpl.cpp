@@ -46,9 +46,10 @@ PosixFiberImpl::PosixFiberImpl(Fiber* fiber, FiberMainFunction mainFunction, boo
 PosixFiberImpl::~PosixFiberImpl() {
 }
 
-void PosixFiberImpl::swapTo(PosixFiberImpl& lastFiberImpl) {
-   assert(valid && lastFiberImpl.valid);
-   bool success = (swapcontext(&lastFiberImpl.context, &context) == 0);
+// static
+void PosixFiberImpl::swap(PosixFiberImpl& from, PosixFiberImpl& to) {
+   assert(from.valid && to.valid);
+   bool success = (swapcontext(&from.context, &to.context) == 0);
    assert(success);
 }
 

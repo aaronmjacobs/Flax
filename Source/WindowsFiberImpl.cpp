@@ -35,9 +35,10 @@ WindowsFiberImpl::~WindowsFiberImpl() {
    address = nullptr;
 }
 
-void WindowsFiberImpl::swapTo(WindowsFiberImpl& lastFiberImpl) {
-   assert(address && lastFiberImpl.address && GetCurrentFiber() != address && GetCurrentFiber() == lastFiberImpl.address);
-   SwitchToFiber(address);
+// static
+void WindowsFiberImpl::swap(WindowsFiberImpl& from, WindowsFiberImpl& to) {
+   assert(from.address && to.address && GetCurrentFiber() == from.address && GetCurrentFiber() != to.address);
+   SwitchToFiber(to.address);
 }
 
 } // namespace flax
