@@ -57,7 +57,7 @@ void Fiber::yieldTo(Fiber& fiber) {
 #if FLAX_USE_SCHEDULER
 // static
 void Fiber::yield() {
-   Fiber* nextFiber = scheduler ? scheduler->next() : nullptr;
+   Fiber* nextFiber = scheduler->next();
    if (!nextFiber) {
       return;
    }
@@ -107,8 +107,10 @@ Fiber::Fiber(const std::function<void()>& func, const std::string& name, bool is
 #if FLAX_USE_SCHEDULER
    if (isValid()) {
       fibers.push_back(this);
-      if (scheduler) {
-         scheduler->onFiberCreated(this);
+      scheduler->onFiberCreated(this);
+
+      if (isMainFiber) {
+         scheduler->onFiberYieldedTo(this);
       }
    }
 #endif // FLAX_USE_SCHEDULER
@@ -128,10 +130,7 @@ void Fiber::finish() {
    finished = true;
 
 #if FLAX_USE_SCHEDULER
-   if (scheduler) {
-      scheduler->onFiberFinished(this);
-   }
-
+   scheduler->onFiberFinished(this);
    fibers.erase(std::remove_if(fibers.begin(), fibers.end(), [this](const Fiber* fiber) { return fiber == this; }), fibers.end());
 #endif // FLAX_USE_SCHEDULER
 }
