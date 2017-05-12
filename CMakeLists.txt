@@ -7,6 +7,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
    set(LINUX TRUE)
 endif()
 
+# Options
+option(FLAX_ENABLE_SCHEDULER "Enable support for using a scheduler to select fibers" OFF)
+if (FLAX_ENABLE_SCHEDULER)
+   set(FLAX_USE_SCHEDULER 1)
+else ()
+   set(FLAX_USE_SCHEDULER 0)
+endif ()
+
 # Source files
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Source")
 set(INC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Include")
@@ -15,8 +23,6 @@ set(SOURCES
    "${INC_DIR}/Flax/Common.h"
    "${INC_DIR}/Flax/Fiber.h"
    "${INC_DIR}/Flax/FiberImpl.h"
-   "${INC_DIR}/Flax/RoundRobinScheduler.h"
-   "${INC_DIR}/Flax/Scheduler.h"
    "${SRC_DIR}/Fiber.cpp"
 )
 
@@ -43,10 +49,22 @@ elseif (LINUX)
    )
 endif ()
 
+if (FLAX_ENABLE_SCHEDULER)
+   list(APPEND SOURCES
+      "${INC_DIR}/Flax/Scheduler.h"
+      "${INC_DIR}/Flax/RoundRobinScheduler.h"
+   )
+endif ()
+
 # Library definition and features
 add_library(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC "${INC_DIR}")
-target_compile_definitions(${PROJECT_NAME} PUBLIC FLAX_PLATFORM_WIN=${FLAX_PLATFORM_WIN} FLAX_PLATFORM_MAC=${FLAX_PLATFORM_MAC} FLAX_PLATFORM_LINUX=${FLAX_PLATFORM_LINUX})
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+   FLAX_PLATFORM_WIN=${FLAX_PLATFORM_WIN}
+   FLAX_PLATFORM_MAC=${FLAX_PLATFORM_MAC}
+   FLAX_PLATFORM_LINUX=${FLAX_PLATFORM_LINUX}
+   FLAX_USE_SCHEDULER=${FLAX_USE_SCHEDULER}
+)
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_STANDARD 14
     CXX_STANDARD_REQUIRED ON

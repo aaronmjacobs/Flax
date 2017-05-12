@@ -2,12 +2,15 @@
 #define FLAX_FIBER_H
 
 #include "Flax/FiberImpl.h"
+
+#if FLAX_USE_SCHEDULER
 #include "Flax/Scheduler.h"
+#include <vector>
+#endif // FLAX_USE_SCHEDULER
 
 #include <functional>
 #include <memory>
 #include <string>
-#include <vector>
 
 namespace flax {
 
@@ -17,11 +20,13 @@ public:
 
    static std::unique_ptr<Fiber> create(const std::function<void()>& func, const std::string& name = "Fiber");
 
-   static void yield();
-
    static void yieldTo(Fiber& fiber);
 
+#if FLAX_USE_SCHEDULER
+   static void yield();
+
    static void setScheduler(std::unique_ptr<Scheduler> newScheduler);
+#endif // FLAX_USE_SCHEDULER
 
    ~Fiber();
 
@@ -56,6 +61,7 @@ private:
 
    void finish();
 
+#if FLAX_USE_SCHEDULER
    class SchedulerContainer {
    public:
       SchedulerContainer()
@@ -88,8 +94,10 @@ private:
    };
 
    static thread_local SchedulerContainer scheduler;
-   static thread_local Fiber* activeFiber;
    static thread_local std::vector<Fiber*> fibers;
+#endif // FLAX_USE_SCHEDULER
+
+   static thread_local Fiber* activeFiber;
 
    std::function<void()> function;
    std::string fiberName;

@@ -6,14 +6,16 @@
 
 namespace flax {
 
+#if FLAX_USE_SCHEDULER
 // static
-thread_local Fiber* Fiber::activeFiber = nullptr;
+thread_local Fiber::SchedulerContainer Fiber::scheduler(std::make_unique<RoundRobinScheduler>());
 
 // static
 thread_local std::vector<Fiber*> Fiber::fibers;
+#endif // FLAX_USE_SCHEDULER
 
 // static
-thread_local Fiber::SchedulerContainer Fiber::scheduler(std::make_unique<RoundRobinScheduler>());
+thread_local Fiber* Fiber::activeFiber = nullptr;
 
 // static
 Fiber& Fiber::getMainFiber() {
@@ -37,6 +39,23 @@ std::unique_ptr<Fiber> Fiber::create(const std::function<void()>& func, const st
 }
 
 // static
+void Fiber::yieldTo(Fiber& fiber) {
+   assert(fiber.isValid() && !fiber.isActive() && !fiber.isFinished());
+   assert(activeFiber && activeFiber->isValid() && activeFiber->isActive());
+   assert(&fiber != activeFiber);
+
+#if FLAX_USE_SCHEDULER
+   scheduler->onFiberYieldedTo(&fiber);
+#endif // FLAX_USE_SCHEDULER
+
+   FiberImpl& from = activeFiber->impl;
+   FiberImpl& to = fiber.impl;
+   activeFiber = &fiber;
+   FiberImpl::swap(from, to);
+}
+
+#if FLAX_USE_SCHEDULER
+// static
 void Fiber::yield() {
    Fiber* nextFiber = scheduler ? scheduler->next() : nullptr;
    if (!nextFiber) {
@@ -50,32 +69,17 @@ void Fiber::yield() {
 }
 
 // static
-void Fiber::yieldTo(Fiber& fiber) {
-   assert(fiber.isValid() && !fiber.isActive() && !fiber.isFinished());
-   assert(activeFiber && activeFiber->isValid() && activeFiber->isActive());
-   assert(&fiber != activeFiber);
-
-   if (scheduler) {
-      scheduler->onFiberYieldedTo(&fiber);
-   }
-
-   FiberImpl& from = activeFiber->impl;
-   FiberImpl& to = fiber.impl;
-   activeFiber = &fiber;
-   FiberImpl::swap(from, to);
-}
-
-// static
 void Fiber::setScheduler(std::unique_ptr<Scheduler> newScheduler) {
-   scheduler = std::move(newScheduler);
+   if (newScheduler) {
+      scheduler = std::move(newScheduler);
 
-   if (scheduler) {
       for (Fiber* fiber : fibers) {
          assert(fiber->isValid());
          scheduler->onFiberCreated(fiber);
       }
    }
 }
+#endif // FLAX_USE_SCHEDULER
 
 // static
 void Fiber::fiberMain(Fiber* fiber) {
@@ -84,7 +88,11 @@ void Fiber::fiberMain(Fiber* fiber) {
    fiber->function();
 
    fiber->finish();
+#if FLAX_USE_SCHEDULER
    fiber->yield();
+#else
+   fiber->yieldTo(getMainFiber());
+#endif // FLAX_USE_SCHEDULER
 
    assert(false); // Should never get here
 }
@@ -96,12 +104,14 @@ Fiber::Fiber(const std::function<void()>& func, const std::string& name, bool is
       activeFiber = this;
    }
 
+#if FLAX_USE_SCHEDULER
    if (isValid()) {
       fibers.push_back(this);
       if (scheduler) {
          scheduler->onFiberCreated(this);
       }
    }
+#endif // FLAX_USE_SCHEDULER
 }
 
 Fiber::~Fiber() {
@@ -117,11 +127,13 @@ void Fiber::finish() {
 
    finished = true;
 
+#if FLAX_USE_SCHEDULER
    if (scheduler) {
       scheduler->onFiberFinished(this);
    }
 
    fibers.erase(std::remove_if(fibers.begin(), fibers.end(), [this](const Fiber* fiber) { return fiber == this; }), fibers.end());
+#endif // FLAX_USE_SCHEDULER
 }
 
 } // namespace flax
