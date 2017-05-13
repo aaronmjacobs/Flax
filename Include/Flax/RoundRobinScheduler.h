@@ -4,10 +4,14 @@
 #include "Flax/Scheduler.h"
 
 #include <algorithm>
+#include <cassert>
 #include <deque>
 
 namespace flax {
 
+/*!
+ * Round robin Fiber scheduler.
+ */
 class RoundRobinScheduler : public Scheduler {
 public:
    RoundRobinScheduler()
@@ -33,10 +37,14 @@ public:
    }
 
    virtual void onFiberCreated(Fiber* fiber) override {
+      assert(fiber && scheduledFiber != fiber && std::find(fiberQueue.begin(), fiberQueue.end(), fiber) == fiberQueue.end());
+
       fiberQueue.push_back(fiber);
    }
 
    virtual void onFiberFinished(Fiber* fiber) override {
+      assert(fiber && (fiber == scheduledFiber || std::find(fiberQueue.begin(), fiberQueue.end(), fiber) != fiberQueue.end()));
+
       if (scheduledFiber == fiber) {
          scheduledFiber = nullptr;
       }
@@ -45,7 +53,7 @@ public:
    }
 
    virtual void onFiberYieldedTo(Fiber* fiber) override {
-      // assert(fiber == scheduledFiber || std::find(fiberQueue.begin(), fiberQueue.end(), fiber) != fiberQueue.end());
+      assert(fiber && (fiber == scheduledFiber || std::find(fiberQueue.begin(), fiberQueue.end(), fiber) != fiberQueue.end()));
 
       while (fiber != scheduledFiber) {
          next();
