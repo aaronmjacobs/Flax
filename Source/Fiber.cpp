@@ -77,6 +77,10 @@ void Fiber::setScheduler(std::unique_ptr<Scheduler> newScheduler) {
          assert(fiber->isValid());
          scheduler->onFiberCreated(fiber);
       }
+
+      if (activeFiber) {
+         scheduler->onFiberYieldedTo(activeFiber);
+      }
    }
 }
 #endif // FLAX_USE_SCHEDULER
