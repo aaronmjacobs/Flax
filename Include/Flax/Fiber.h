@@ -34,9 +34,11 @@ public:
    }
 
    /*!
-    * Creates a new Fiber on the current thread that will run |func|. Returns a null pointer on failure.
+    * Creates a new Fiber on the current thread that will run |function|. Returns a null pointer on failure.
+    * When a created Fiber finishes executing, if a scheduler is being used, the next chosen Fiber will be yielded to.
+    * If a scheduler is not being used, the Fiber will yield to the main Fiber.
     */
-   static std::unique_ptr<Fiber> create(const std::function<void()>& func, const std::string& name = "Fiber");
+   static std::unique_ptr<Fiber> create(const std::function<void()>& function, const std::string& name = "Fiber");
 
    /*!
     * Yields execution to the given Fiber. You should not yield to the active Fiber or to a Fiber that has finished executing.

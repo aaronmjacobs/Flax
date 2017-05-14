@@ -26,11 +26,11 @@ Fiber& Fiber::getMainFiber() {
 }
 
 // static
-std::unique_ptr<Fiber> Fiber::create(const std::function<void()>& func, const std::string& name) {
+std::unique_ptr<Fiber> Fiber::create(const std::function<void()>& function, const std::string& name) {
    // Make sure the main fiber is initialized
    getMainFiber();
 
-   std::unique_ptr<Fiber> newFiber(new Fiber(func, name, false));
+   std::unique_ptr<Fiber> newFiber(new Fiber(function, name, false));
    if (!newFiber->isValid()) {
       return nullptr;
    }
