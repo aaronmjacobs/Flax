@@ -134,7 +134,9 @@ void Fiber::finish() {
    finished = true;
 
 #if FLAX_USE_SCHEDULER
-   scheduler->onFiberFinished(this);
+   if (scheduler) {
+      scheduler->onFiberFinished(this);
+   }
    fibers.erase(std::remove_if(fibers.begin(), fibers.end(), [this](const Fiber* fiber) { return fiber == this; }), fibers.end());
 #endif // FLAX_USE_SCHEDULER
 }
