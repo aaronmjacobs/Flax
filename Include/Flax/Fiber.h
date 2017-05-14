@@ -30,7 +30,7 @@ public:
     * Gets the (thread local) active Fiber. If no Fibers have been created (including the main fiber), nullptr will be returned.
     */
    static Fiber* getActiveFiber() {
-      return activeFiber;
+      return threadLocalData ? threadLocalData->activeFiber : nullptr;
    }
 
    /*!
@@ -70,7 +70,7 @@ public:
     * Returns whether the Fiber is the active Fiber.
     */
    bool isActive() const {
-      return activeFiber == this;
+      return data->activeFiber == this;
    }
 
    /*!
@@ -102,49 +102,22 @@ private:
 
    void finish();
 
+   struct ThreadLocalData {
+      Fiber* activeFiber;
 #if FLAX_USE_SCHEDULER
-   class SchedulerContainer {
-   public:
-      SchedulerContainer()
-         : scheduler(nullptr) {
-      }
-
-      SchedulerContainer(std::unique_ptr<Scheduler> other)
-         : scheduler(std::move(other)) {
-      }
-
-      ~SchedulerContainer() {
-         scheduler = nullptr;
-      }
-
-      SchedulerContainer& operator=(std::unique_ptr<Scheduler> other) {
-         scheduler = std::move(other);
-         return *this;
-      }
-
-      Scheduler* operator->() {
-         return scheduler.get();
-      }
-
-      explicit operator bool() {
-         return scheduler.operator bool();
-      }
-
-   private:
       std::unique_ptr<Scheduler> scheduler;
+      std::vector<Fiber*> fibers;
+#endif // FLAX_USE_SCHEDULER
    };
 
-   static thread_local SchedulerContainer scheduler;
-   static thread_local std::vector<Fiber*> fibers;
-#endif // FLAX_USE_SCHEDULER
-
-   static thread_local Fiber* activeFiber;
+   static thread_local std::shared_ptr<ThreadLocalData> threadLocalData;
 
    std::function<void()> function;
    std::string fiberName;
    const bool mainFiber;
    bool finished;
    FiberImpl impl;
+   std::shared_ptr<ThreadLocalData> data;
 };
 
 } // namespace flax

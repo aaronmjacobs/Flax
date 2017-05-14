@@ -6,16 +6,8 @@
 
 namespace flax {
 
-#if FLAX_USE_SCHEDULER
 // static
-thread_local Fiber::SchedulerContainer Fiber::scheduler(std::make_unique<RoundRobinScheduler>());
-
-// static
-thread_local std::vector<Fiber*> Fiber::fibers;
-#endif // FLAX_USE_SCHEDULER
-
-// static
-thread_local Fiber* Fiber::activeFiber = nullptr;
+thread_local std::shared_ptr<Fiber::ThreadLocalData> Fiber::threadLocalData;
 
 // static
 Fiber& Fiber::getMainFiber() {
@@ -41,45 +33,50 @@ std::unique_ptr<Fiber> Fiber::create(const std::function<void()>& function, cons
 // static
 void Fiber::yieldTo(Fiber& fiber) {
    assert(fiber.isValid() && !fiber.isActive() && !fiber.isFinished());
-   assert(activeFiber && activeFiber->isValid() && activeFiber->isActive());
-   assert(&fiber != activeFiber);
+   assert(threadLocalData && threadLocalData->activeFiber);
+   assert(threadLocalData->activeFiber->isValid() && threadLocalData->activeFiber->isActive());
+   assert(&fiber != threadLocalData->activeFiber);
 
 #if FLAX_USE_SCHEDULER
-   scheduler->onFiberYieldedTo(&fiber);
+   threadLocalData->scheduler->onFiberYieldedTo(&fiber);
 #endif // FLAX_USE_SCHEDULER
 
-   FiberImpl& from = activeFiber->impl;
+   FiberImpl& from = threadLocalData->activeFiber->impl;
    FiberImpl& to = fiber.impl;
-   activeFiber = &fiber;
+   threadLocalData->activeFiber = &fiber;
    FiberImpl::swap(from, to);
 }
 
 #if FLAX_USE_SCHEDULER
 // static
 void Fiber::yield() {
-   Fiber* nextFiber = scheduler->next();
+   assert(threadLocalData && threadLocalData->activeFiber && threadLocalData->scheduler);
+
+   Fiber* nextFiber = threadLocalData->scheduler->next();
    if (!nextFiber) {
       return;
    }
 
    assert(nextFiber->isValid() && !nextFiber->isActive() && !nextFiber->isFinished());
-   assert(nextFiber != activeFiber);
+   assert(nextFiber != threadLocalData->activeFiber);
 
    yieldTo(*nextFiber);
 }
 
 // static
 void Fiber::setScheduler(std::unique_ptr<Scheduler> newScheduler) {
-   if (newScheduler) {
-      scheduler = std::move(newScheduler);
+   assert(threadLocalData);
 
-      for (Fiber* fiber : fibers) {
+   if (newScheduler) {
+      threadLocalData->scheduler = std::move(newScheduler);
+
+      for (Fiber* fiber : threadLocalData->fibers) {
          assert(fiber->isValid());
-         scheduler->onFiberCreated(fiber);
+         threadLocalData->scheduler->onFiberCreated(fiber);
       }
 
-      if (activeFiber) {
-         scheduler->onFiberYieldedTo(activeFiber);
+      if (threadLocalData->activeFiber) {
+         threadLocalData->scheduler->onFiberYieldedTo(threadLocalData->activeFiber);
       }
    }
 }
@@ -104,17 +101,25 @@ void Fiber::fiberMain(Fiber* fiber) {
 Fiber::Fiber(const std::function<void()>& func, const std::string& name, bool isMainFiber)
    : function(func), fiberName(name), mainFiber(isMainFiber), finished(false), impl(FiberAndMain(this, &Fiber::fiberMain), isMainFiber) {
    if (isMainFiber) {
-      assert(isValid() && function == nullptr && activeFiber == nullptr);
-      activeFiber = this;
+      assert(isValid() && function == nullptr && threadLocalData == nullptr);
+
+      threadLocalData = std::shared_ptr<ThreadLocalData>(new ThreadLocalData{});
+      threadLocalData->activeFiber = this;
+#if FLAX_USE_SCHEDULER
+      threadLocalData->scheduler = std::make_unique<RoundRobinScheduler>();
+#endif // FLAX_USE_SCHEDULER
    }
+
+   data = threadLocalData;
+   assert(data);
 
 #if FLAX_USE_SCHEDULER
    if (isValid()) {
-      fibers.push_back(this);
-      scheduler->onFiberCreated(this);
+      data->fibers.push_back(this);
+      data->scheduler->onFiberCreated(this);
 
       if (isMainFiber) {
-         scheduler->onFiberYieldedTo(this);
+         data->scheduler->onFiberYieldedTo(this);
       }
    }
 #endif // FLAX_USE_SCHEDULER
@@ -134,10 +139,8 @@ void Fiber::finish() {
    finished = true;
 
 #if FLAX_USE_SCHEDULER
-   if (scheduler) {
-      scheduler->onFiberFinished(this);
-   }
-   fibers.erase(std::remove_if(fibers.begin(), fibers.end(), [this](const Fiber* fiber) { return fiber == this; }), fibers.end());
+   data->scheduler->onFiberFinished(this);
+   data->fibers.erase(std::remove_if(data->fibers.begin(), data->fibers.end(), [this](const Fiber* fiber) { return fiber == this; }), data->fibers.end());
 #endif // FLAX_USE_SCHEDULER
 }
 
