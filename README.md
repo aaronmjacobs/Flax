@@ -12,15 +12,21 @@ Code:
 #include <cstdio>
 
 static void foo() {
-   std::printf("foo()\n");
+   std::printf("foo() begin\n");
+   flax::Fiber::yield();
+   std::printf("foo() end\n");
 }
 
 static void bar() {
-   std::printf("bar()\n");
+   std::printf("bar() begin\n");
+   flax::Fiber::yield();
+   std::printf("bar() end\n");
 }
 
 static void baz() {
-   std::printf("baz()\n");
+   std::printf("baz() begin\n");
+   flax::Fiber::yield();
+   std::printf("baz() end\n");
 }
 
 int main(int argc, char* argv[]) {
@@ -31,9 +37,11 @@ int main(int argc, char* argv[]) {
    
    // Calling Fiber::yield() uses a scheduler to select the next fiber.
    // By default, a round robin scheduler is used (though you can provide your own).
-   std::printf("Before yield()\n");
+   std::printf("Before yield() calls\n");
    flax::Fiber::yield();
-   std::printf("After yield()\n");
+   std::printf("Between yield() calls\n");
+   flax::Fiber::yield();
+   std::printf("After yield() calls\n");
    
    // Fiber::create() takes a std::function, so you can pass lambdas that capture variables.
    int x = 0;
@@ -50,11 +58,15 @@ int main(int argc, char* argv[]) {
 
 Output:
 ```
-Before yield()
-foo()
-bar()
-baz()
-After yield()
+Before yield() calls
+foo() begin
+bar() begin
+baz() begin
+Between yield() calls
+foo() end
+bar() end
+baz() end
+After yield() calls
 Before yieldTo(): 0
 After yieldTo(): 1
 ```
