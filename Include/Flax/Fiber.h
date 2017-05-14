@@ -27,6 +27,13 @@ public:
    static Fiber& getMainFiber();
 
    /*!
+    * Gets the (thread local) active Fiber. If no Fibers have been created (including the main fiber), nullptr will be returned.
+    */
+   static Fiber* getActiveFiber() {
+      return activeFiber;
+   }
+
+   /*!
     * Creates a new Fiber on the current thread that will run |func|. Returns a null pointer on failure.
     */
    static std::unique_ptr<Fiber> create(const std::function<void()>& func, const std::string& name = "Fiber");
