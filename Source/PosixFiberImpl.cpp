@@ -3,6 +3,7 @@
 #include <sys/resource.h>
 
 #include <cassert>
+#include <cstddef>
 
 namespace flax {
 
@@ -27,11 +28,13 @@ void fiberStart(FiberAndMain* fiberAndMain) {
 
 } // namespace
 
-PosixFiberImpl::PosixFiberImpl(Fiber* fiber, FiberMainFunction mainFunction, bool isMainFiber)
-   : context{}, stack(nullptr), valid(true), fiberAndMain(fiber, mainFunction) {
+PosixFiberImpl::PosixFiberImpl(FiberAndMain fiberData, bool isMainFiber)
+   : context{}, stack(nullptr), valid(true), fiberAndMain(fiberData) {
+   assert(fiberAndMain.fiber && fiberAndMain.mainFunction);
+
    valid = (getcontext(&context) == 0);
 
-   if (valid && !isMainFiber) {
+   if (isValid() && !isMainFiber) {
       std::size_t stackSize = getStackSize();
       stack = std::unique_ptr<uint8_t[]>(new uint8_t[stackSize]);
 
@@ -48,7 +51,7 @@ PosixFiberImpl::~PosixFiberImpl() {
 
 // static
 void PosixFiberImpl::swap(PosixFiberImpl& from, PosixFiberImpl& to) {
-   assert(from.valid && to.valid);
+   assert(from.isValid() && to.isValid());
    bool success = (swapcontext(&from.context, &to.context) == 0);
    assert(success);
 }

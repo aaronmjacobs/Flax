@@ -7,7 +7,7 @@ namespace flax {
 
 class WindowsFiberImpl {
 public:
-   WindowsFiberImpl(Fiber* fiber, FiberMainFunction mainFunction, bool isMainFiber);
+   WindowsFiberImpl(FiberAndMain fiberData, bool isMainFiber);
 
    ~WindowsFiberImpl();
 

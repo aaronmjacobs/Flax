@@ -102,9 +102,9 @@ void Fiber::fiberMain(Fiber* fiber) {
 }
 
 Fiber::Fiber(const std::function<void()>& func, const std::string& name, bool isMainFiber)
-   : function(func), fiberName(name), mainFiber(isMainFiber), finished(false), impl(this, &Fiber::fiberMain, isMainFiber) {
+   : function(func), fiberName(name), mainFiber(isMainFiber), finished(false), impl(FiberAndMain(this, &Fiber::fiberMain), isMainFiber) {
    if (isMainFiber) {
-      assert(isValid() && function == nullptr);
+      assert(isValid() && function == nullptr && activeFiber == nullptr);
       activeFiber = this;
    }
 

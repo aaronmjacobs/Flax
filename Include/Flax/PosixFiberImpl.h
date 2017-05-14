@@ -13,7 +13,7 @@ namespace flax {
 
 class PosixFiberImpl {
 public:
-   PosixFiberImpl(Fiber* fiber, FiberMainFunction mainFunction, bool isMainFiber);
+   PosixFiberImpl(FiberAndMain fiberData, bool isMainFiber);
 
    ~PosixFiberImpl();
 

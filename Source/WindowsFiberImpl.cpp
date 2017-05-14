@@ -7,9 +7,9 @@
 
 namespace flax {
 
-WindowsFiberImpl::WindowsFiberImpl(Fiber* fiber, FiberMainFunction mainFunction, bool isMainFiber)
-   : address(nullptr), mainFiber(isMainFiber), fiberAndMain(fiber, mainFunction) {
-   assert(fiber && mainFunction);
+WindowsFiberImpl::WindowsFiberImpl(FiberAndMain fiberData, bool isMainFiber)
+   : address(nullptr), mainFiber(isMainFiber), fiberAndMain(fiberData) {
+   assert(fiberAndMain.fiber && fiberAndMain.mainFunction);
 
    if (mainFiber) {
       address = ConvertThreadToFiber(this);
@@ -26,19 +26,17 @@ WindowsFiberImpl::WindowsFiberImpl(Fiber* fiber, FiberMainFunction mainFunction,
 
 WindowsFiberImpl::~WindowsFiberImpl() {
    if (mainFiber) {
-      assert(address);
+      assert(isValid());
       bool success = ConvertFiberToThread() != 0;
       assert(success);
    } else if (address) {
       DeleteFiber(address);
    }
-
-   address = nullptr;
 }
 
 // static
 void WindowsFiberImpl::swap(WindowsFiberImpl& from, WindowsFiberImpl& to) {
-   assert(from.address && to.address && GetCurrentFiber() == from.address && GetCurrentFiber() != to.address);
+   assert(from.isValid() && to.isValid() && GetCurrentFiber() == from.address && GetCurrentFiber() != to.address);
    SwitchToFiber(to.address);
 }
 
