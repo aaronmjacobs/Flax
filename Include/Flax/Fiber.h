@@ -29,9 +29,7 @@ public:
    /*!
     * Gets the (thread local) active Fiber. If no Fibers have been created (including the main fiber), nullptr will be returned.
     */
-   static Fiber* getActiveFiber() {
-      return threadLocalData ? threadLocalData->activeFiber : nullptr;
-   }
+   static Fiber* getActiveFiber();
 
    /*!
     * Creates a new Fiber on the current thread that will run |function|. Returns a null pointer on failure.

@@ -23,6 +23,12 @@ Fiber& Fiber::getMainFiber() {
 }
 
 // static
+Fiber* Fiber::getActiveFiber() {
+   assert(threadLocalData);
+   return threadLocalData->activeFiber;
+}
+
+// static
 std::unique_ptr<Fiber> Fiber::create(const std::function<void()>& function, const std::string& name) {
    // Make sure the main fiber is initialized
    getMainFiber();
