@@ -6,8 +6,13 @@
 
 namespace flax {
 
+#if FLAX_USE_SCHEDULER
 // static
-thread_local std::shared_ptr<Fiber::ThreadLocalData> Fiber::threadLocalData;
+thread_local std::shared_ptr<Fiber::ThreadLocalData> Fiber::threadLocalData(new Fiber::ThreadLocalData(std::make_unique<RoundRobinScheduler>()));
+#else
+// static
+thread_local std::shared_ptr<Fiber::ThreadLocalData> Fiber::threadLocalData(new Fiber::ThreadLocalData);
+#endif // FLAX_USE_SCHEDULER
 
 // static
 Fiber& Fiber::getMainFiber() {
@@ -101,13 +106,8 @@ void Fiber::fiberMain(Fiber* fiber) {
 Fiber::Fiber(const std::function<void()>& func, const std::string& name, bool isMainFiber)
    : function(func), fiberName(name), mainFiber(isMainFiber), finished(false), impl(FiberAndMain(this, &Fiber::fiberMain), isMainFiber) {
    if (isMainFiber) {
-      assert(isValid() && function == nullptr && threadLocalData == nullptr);
-
-      threadLocalData = std::shared_ptr<ThreadLocalData>(new ThreadLocalData{});
+      assert(isValid() && function == nullptr && threadLocalData && threadLocalData->activeFiber == nullptr);
       threadLocalData->activeFiber = this;
-#if FLAX_USE_SCHEDULER
-      threadLocalData->scheduler = std::make_unique<RoundRobinScheduler>();
-#endif // FLAX_USE_SCHEDULER
    }
 
    data = threadLocalData;

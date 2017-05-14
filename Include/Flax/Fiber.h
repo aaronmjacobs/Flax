@@ -103,6 +103,16 @@ private:
    void finish();
 
    struct ThreadLocalData {
+#if FLAX_USE_SCHEDULER
+      ThreadLocalData(std::unique_ptr<Scheduler> initialScheduler)
+         : activeFiber(nullptr), scheduler(std::move(initialScheduler)) {
+      }
+#else
+      ThreadLocalData()
+         : activeFiber(nullptr) {
+      }
+#endif // FLAX_USE_SCHEDULER
+
       Fiber* activeFiber;
 #if FLAX_USE_SCHEDULER
       std::unique_ptr<Scheduler> scheduler;
