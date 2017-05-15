@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Flax is a simple C++ library that allows you to create and manage fibers. It has both Windows and POSIX implementations.
+Flax is a simple C++ library that allows you to create and manage [fibers](https://en.wikipedia.org/wiki/Fiber_(computer_science)) (lightweight threads of execution that allow for cooperative multitasking). It has both Windows and POSIX implementations.
 
 ## Usage
 
