@@ -103,14 +103,8 @@ To compile Flax along with another application using CMake, first add the Flax s
 add_subdirectory("path/to/Flax")
 ```
 
-Next, specify the the location of the Flax includes:
+Then link against the Flax library:
 
 ```cmake
-target_include_directories(<target> <INTERFACE|PUBLIC|PRIVATE> $<TARGET_PROPERTY:Flax,INTERFACE_INCLUDE_DIRECTORIES>)
-```
-
-Finally, link against the Flax library:
-
-```cmake
-target_link_libraries(<target> <INTERFACE|PUBLIC|PRIVATE> Flax $<TARGET_PROPERTY:Flax,INTERFACE_LINK_LIBRARIES>)
+target_link_libraries(<target> <INTERFACE|PUBLIC|PRIVATE> Flax)
 ```
